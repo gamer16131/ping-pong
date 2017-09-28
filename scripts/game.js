@@ -4,44 +4,49 @@ function game() {
 	$("<div/>").attr("id", "ball").appendTo("#game")
 	$("<div/>").attr("id", "paddleA").attr("class", "paddle").appendTo("#game")
 	$("<div/>").attr("id", "paddleB").attr("class", "paddle").appendTo("#game")
+
 	var ball = {
 		speed: 3,
-		x: $("#ball").position().left,
-		y: $("#ball").position().top,
+		x: 290,
+		y: 140,
 		width: $("#ball").width(),
 		height: $("#ball").height(),
 		directionY: 1,
 		directionX: 1
 	};
+
 	var paddleA = {
 		speed: 3,
-		x: $("#paddleA").width() + $("#paddleA").position().left,
+		x1: $("#paddleA").position().left,
+		x2: $("#paddleA").position().left + $("#paddleA").width(),
 		y1: $("#paddleA").position().top,
 		y2: $("#paddleA").position().top + $("#paddleA").height(),
+		update: function () {
+			this.y1 = $("#paddleA").position().top;
+			this.y2 = this.y1 + $("#paddleA").height()
+		}
 	};
 
 	var paddleB = {
 		speed: 3,
-		x: $("#paddleB").position().left,
-		y: 100
-	};
+		x1: $("#paddleB").position().left,
+		x2: $("#paddleB").position().left + $("#paddleB").width(),
+		y1: $("#paddleB").position().top,
+		y2: $("#paddleB").position().top + $("#paddleB").height(),
+		update: function () {
+			this.y1 = $("#paddleB").position().top;
+			this.y2 = this.y1 + $("#paddleB").height()
+		}
+	}
 
-
-
-	// Set main loop to be called on the desired frame rate
-	setInterval(gameLoop, 16.6);
-
-
-	// Main loop of the game
-	function gameLoop() {
-		moveBall();
-
-	};
+	var pauseBall = false;
 
 	// Control movement of the ball doing collision checking
 	function moveBall() {
 		var gameWidth = parseInt($("#game").width());
 		var gameHeight = parseInt($("#game").height());
+
+		if (pauseBall) return;
 
 		// Check collision to the bottom border and change the moving orientation on Y axis
 		if (ball.y + ball.speed * ball.directionY > (gameHeight - parseInt($("#ball").height()))) {
@@ -56,21 +61,33 @@ function game() {
 		// Check collision to the left border and change the moving orientation on X axis
 		if (ball.x + ball.speed * ball.directionX > (gameWidth - parseInt($("#ball").width()))) {
 			ball.directionX = -1
+			ball.x = 290;
+			ball.y = 140;
+			pauseBall = true;
+			$("#ball").animate({ "left": ball.x, "top": ball.y }, 2000, function () { pauseBall = false; });
+			return;
 		}
 
 		// Check collision to the right border and change the moving orientation on X axis
 		if (ball.x + ball.speed * ball.directionX < 0) {
 			ball.directionX = 1
+			ball.x = 290;
+			ball.y = 140;
+			pauseBall = true;
+			$("#ball").animate({ "left": ball.x, "top": ball.y }, 2000, function () { pauseBall = false; });
+			return;
 		}
-		// paddleA
-		if (ball.x + ball.speed * ball.directionX < paddleA.x) {
-		
-			ball.directionX = 1;
+		//paddleA
+		if (ball.x + ball.speed * ball.directionX < paddleA.x2 &&
+			ball.y + ball.speed * ball.directionY > paddleA.y1 &&
+			ball.y + ball.speed * ball.directionY < paddleA.y2) {
+			ball.directionX = 1
 		}
-		
 
-		// paddleB
-		if (ball.x + ball.speed * ball.directionX + ball.width >paddleB.x) {
+		// paddleB 
+		if (ball.x + ball.speed * ball.directionX + $("#ball").width() > paddleB.x1 &&
+			ball.y + ball.speed * ball.directionY + $("#ball").width() > paddleB.y1 &&
+			ball.y + ball.speed * ball.directionY < paddleB.y2) {
 			ball.directionX = -1
 		}
 
@@ -82,5 +99,67 @@ function game() {
 		$("#ball").css({ "left": ball.x, "top": ball.y });
 	};
 
+	var pA = $("#paddleA");
+	var pB = $("#paddleB");
+	var directions = {};
+	var speed1 = 4;
 
+	$('html').keyup(stop).keydown(charMovement);
+
+	function charMovement(e) {
+		directions[e.which] = true;
+	}
+
+	function stop(e) {
+		delete directions[e.which];
+	}
+
+	function move1() {
+		for (var i in directions) {
+			if (!directions.hasOwnProperty(i)) continue;
+			//console.log(i);
+
+
+			if (pA.position().top > 0 && i == 87) {
+				pA.css("top", (pA.position().top - speed1) + "px");
+			}
+
+			if (pA.position().top < ($("#game").height() - pA.height()) && i == 83) {
+				pA.css("top", (pA.position().top + speed1) + "px");
+			}
+		}
+		
+		paddleA.update()
+	}
+
+	function move2() {
+		for (var i in directions) {
+			if (!directions.hasOwnProperty(i)) continue;
+			//console.log(i);
+
+
+			if (pB.position().top > 0 && i == 38) {
+				pB.css("top", (pB.position().top - speed1) + "px");
+			}
+
+			if (pB.position().top < ($("#game").height() - pB.height()) && i == 40) {
+				pB.css("top", (pB.position().top + speed1) + "px");
+			}
+		}
+
+		paddleB.update()
+	}
+
+
+	// Set main loop to be called on the desired frame rate
+	setInterval(gameLoop, 16.6);
+
+
+	// Main loop of the game
+	function gameLoop() {
+		moveBall();
+		move1();
+		move2()
+
+	};
 };
